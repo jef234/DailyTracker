@@ -1,23 +1,29 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { deleteJiraEntry, updateJiraEntry } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 
 const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
-  const [editingId, setEditingId] = useState(null);
+  const { user } = useAuth();
+  
+  // Combine form fields into a single state object
   const [editForm, setEditForm] = useState({
+    id: null,
     log_message: '',
     jira_status: '',
     date: '',
     jira_number: '',
     jira_title: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { user } = useAuth();
 
-  const handleDelete = async (id) => {
-    if (!user || !user.id) {
-      setError('Please log in to delete entries');
+  // Separate UI state
+  const [uiState, setUiState] = useState({
+    loading: false,
+    error: ''
+  });
+
+  const handleDelete = useCallback(async (id) => {
+    if (!user?.id) {
+      setUiState(prev => ({ ...prev, error: 'Please log in to delete entries' }));
       return;
     }
 
@@ -26,72 +32,70 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
     }
 
     try {
-      setError('');
-      setLoading(true);
+      setUiState(prev => ({ ...prev, error: '', loading: true }));
       const { error } = await deleteJiraEntry(id, user.id);
       if (error) throw error;
       onEntryDeleted(id);
     } catch (err) {
       console.error('Error deleting entry:', err);
-      setError('Failed to delete entry. Please try again.');
+      setUiState(prev => ({ ...prev, error: 'Failed to delete entry. Please try again.' }));
     } finally {
-      setLoading(false);
+      setUiState(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, [user?.id, onEntryDeleted]);
 
-  const handleEdit = (entry) => {
-    setEditingId(entry.id);
+  const handleEdit = useCallback((entry) => {
     setEditForm({
+      id: entry.id,
       log_message: entry.log_message,
       jira_status: entry.jira_status,
       date: entry.date,
       jira_number: entry.jira_number,
       jira_title: entry.jira_title
     });
-  };
+  }, []);
 
-  const handleUpdate = async (e) => {
+  const handleUpdate = useCallback(async (e) => {
     e.preventDefault();
-    if (!user || !user.id) {
-      setError('Please log in to update entries');
+    if (!user?.id) {
+      setUiState(prev => ({ ...prev, error: 'Please log in to update entries' }));
       return;
     }
 
     try {
-      setError('');
-      setLoading(true);
+      setUiState(prev => ({ ...prev, error: '', loading: true }));
 
       // Validate the form data
       if (!editForm.log_message.trim()) {
-        setError('Log message is required');
+        setUiState(prev => ({ ...prev, error: 'Log message is required' }));
         return;
       }
 
       if (!editForm.jira_status) {
-        setError('JIRA status is required');
+        setUiState(prev => ({ ...prev, error: 'JIRA status is required' }));
         return;
       }
 
       if (!editForm.date) {
-        setError('Date is required');
+        setUiState(prev => ({ ...prev, error: 'Date is required' }));
         return;
       }
 
-      const { data, error } = await updateJiraEntry(editingId, editForm, user.id);
+      const { data, error } = await updateJiraEntry(editForm.id, editForm, user.id);
       
       if (error) {
-        setError(error);
+        setUiState(prev => ({ ...prev, error }));
         return;
       }
 
       if (!data || data.length === 0) {
-        setError('Failed to update entry. No data returned.');
+        setUiState(prev => ({ ...prev, error: 'Failed to update entry. No data returned.' }));
         return;
       }
 
       onEntryUpdated(data[0]);
-      setEditingId(null);
       setEditForm({
+        id: null,
         log_message: '',
         jira_status: '',
         date: '',
@@ -100,22 +104,29 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
       });
     } catch (err) {
       console.error('Error updating entry:', err);
-      setError('Failed to update entry. Please try again.');
+      setUiState(prev => ({ ...prev, error: 'Failed to update entry. Please try again.' }));
     } finally {
-      setLoading(false);
+      setUiState(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, [editForm, user?.id, onEntryUpdated]);
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
+  const handleCancelEdit = useCallback(() => {
     setEditForm({
+      id: null,
       log_message: '',
       jira_status: '',
       date: '',
       jira_number: '',
       jira_title: ''
     });
-  };
+  }, []);
+
+  const handleFormChange = useCallback((field, value) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
 
   if (!entries || entries.length === 0) {
     return (
@@ -126,27 +137,30 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
   }
 
   // Filter out any invalid entries
-  const validEntries = entries.filter(entry => 
-    entry && 
-    entry.id && 
-    entry.jira_number && 
-    entry.jira_title && 
-    entry.log_message && 
-    entry.jira_status && 
-    entry.date
+  const validEntries = useMemo(() => 
+    entries.filter(entry => 
+      entry && 
+      entry.id && 
+      entry.jira_number && 
+      entry.jira_title && 
+      entry.log_message && 
+      entry.jira_status && 
+      entry.date
+    ),
+    [entries]
   );
 
   return (
     <div className="space-y-4">
-      {error && (
+      {uiState.error && (
         <div className="rounded-md bg-red-50 p-4">
-          <div className="text-sm text-red-700">{error}</div>
+          <div className="text-sm text-red-700">{uiState.error}</div>
         </div>
       )}
 
       {validEntries.map((entry) => (
         <div key={entry.id} className="bg-white shadow rounded-lg p-6">
-          {editingId === entry.id ? (
+          {editForm.id === entry.id ? (
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -178,7 +192,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                 </label>
                 <textarea
                   value={editForm.log_message}
-                  onChange={(e) => setEditForm({ ...editForm, log_message: e.target.value })}
+                  onChange={(e) => handleFormChange('log_message', e.target.value)}
                   rows={3}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   required
@@ -191,7 +205,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                 </label>
                 <select
                   value={editForm.jira_status}
-                  onChange={(e) => setEditForm({ ...editForm, jira_status: e.target.value })}
+                  onChange={(e) => handleFormChange('jira_status', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 >
                   <option value="In Progress">In Progress</option>
@@ -208,7 +222,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                 <input
                   type="date"
                   value={editForm.date}
-                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                  onChange={(e) => handleFormChange('date', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   required
                 />
@@ -217,10 +231,10 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
               <div className="flex space-x-2">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={uiState.loading}
                   className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {uiState.loading ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button
                   type="button"
@@ -268,7 +282,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                   </button>
                   <button
                     onClick={() => handleDelete(entry.id)}
-                    disabled={loading}
+                    disabled={uiState.loading}
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg

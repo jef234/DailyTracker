@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { getJiraEntries } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,15 +8,19 @@ import JiraEntryList from '../../components/JiraEntryList';
 const DailyTracker = () => {
   const { user, signOut, deleteAccount } = useAuth();
   const router = useRouter();
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+  
+  // Combine related state
+  const [state, setState] = useState({
+    entries: [],
+    loading: true,
+    error: '',
+    showDropdown: false,
+    showDeleteConfirm: false,
+    dateRange: {
+      start: new Date().toISOString().split('T')[0],
+      end: new Date().toISOString().split('T')[0]
+    }
   });
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -27,73 +31,85 @@ const DailyTracker = () => {
     fetchEntries();
   }, [user, router]);
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     try {
-      setError('');
+      setState(prev => ({ ...prev, error: '' }));
       const { data, error } = await getJiraEntries(user.id);
       if (error) throw error;
-      setEntries(data || []);
+      setState(prev => ({ ...prev, entries: data || [] }));
     } catch (err) {
       console.error('Error fetching entries:', err);
-      setError('Failed to fetch entries. Please try again.');
+      setState(prev => ({ ...prev, error: 'Failed to fetch entries. Please try again.' }));
     } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, [user?.id]);
 
-  const handleEntryAdded = (newEntry) => {
-    setEntries([newEntry, ...entries]);
-  };
+  const handleEntryAdded = useCallback((newEntry) => {
+    setState(prev => ({
+      ...prev,
+      entries: [newEntry, ...prev.entries]
+    }));
+  }, []);
 
-  const handleEntryDeleted = (deletedId) => {
-    setEntries(entries.filter(entry => entry.id !== deletedId));
-  };
+  const handleEntryDeleted = useCallback((deletedId) => {
+    setState(prev => ({
+      ...prev,
+      entries: prev.entries.filter(entry => entry.id !== deletedId)
+    }));
+  }, []);
 
-  const handleEntryUpdated = (updatedEntry) => {
-    setEntries(entries.map(entry => 
-      entry.id === updatedEntry.id ? updatedEntry : entry
-    ));
-  };
+  const handleEntryUpdated = useCallback((updatedEntry) => {
+    setState(prev => ({
+      ...prev,
+      entries: prev.entries.map(entry => 
+        entry.id === updatedEntry.id ? updatedEntry : entry
+      )
+    }));
+  }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       await signOut();
       router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
+  }, [signOut, router]);
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = useCallback(async () => {
     try {
-      setError('');
-      setLoading(true);
+      setState(prev => ({ ...prev, error: '', loading: true }));
       await deleteAccount();
       router.push('/');
     } catch (err) {
       console.error('Error deleting account:', err);
-      setError('Failed to delete account. Please try again.');
+      setState(prev => ({ ...prev, error: 'Failed to delete account. Please try again.' }));
     } finally {
-      setLoading(false);
-      setShowDeleteConfirm(false);
+      setState(prev => ({ 
+        ...prev, 
+        loading: false,
+        showDeleteConfirm: false 
+      }));
     }
-  };
+  }, [deleteAccount, router]);
 
-  const handleSwitchAccount = () => {
-    setShowDropdown(false);
+  const handleSwitchAccount = useCallback(() => {
+    setState(prev => ({ ...prev, showDropdown: false }));
     router.push('/login');
-  };
+  }, [router]);
 
-  const filteredEntries = entries.filter(entry => {
-    const entryDate = new Date(entry.date);
-    const startDate = new Date(dateRange.start);
-    const endDate = new Date(dateRange.end);
-    return entryDate >= startDate && entryDate <= endDate;
-  });
+  // Memoize filtered entries
+  const filteredEntries = useMemo(() => {
+    return state.entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      const startDate = new Date(state.dateRange.start);
+      const endDate = new Date(state.dateRange.end);
+      return entryDate >= startDate && entryDate <= endDate;
+    });
+  }, [state.entries, state.dateRange]);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -103,12 +119,12 @@ const DailyTracker = () => {
             <h1 className="text-2xl font-bold text-gray-900">Daily JIRA Tracker</h1>
             <div className="relative">
               <button
-                onClick={() => setShowDropdown(!showDropdown)}
+                onClick={() => setState(prev => ({ ...prev, showDropdown: !prev.showDropdown }))}
                 className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
               >
                 <span>{user.email}</span>
                 <svg 
-                  className={`w-4 h-4 transform transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
+                  className={`w-4 h-4 transform transition-transform ${state.showDropdown ? 'rotate-180' : ''}`} 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -116,12 +132,12 @@ const DailyTracker = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              {showDropdown && (
+              {state.showDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                   <a
                     href="/reset-password"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setShowDropdown(false)}
+                    onClick={() => setState(prev => ({ ...prev, showDropdown: false }))}
                   >
                     Change Password
                   </a>
@@ -132,17 +148,18 @@ const DailyTracker = () => {
                     Switch Account
                   </button>
                   <button
-                    onClick={() => {
-                      setShowDropdown(false);
-                      setShowDeleteConfirm(true);
-                    }}
+                    onClick={() => setState(prev => ({ 
+                      ...prev, 
+                      showDropdown: false,
+                      showDeleteConfirm: true 
+                    }))}
                     className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                   >
                     Delete Account
                   </button>
                   <button
                     onClick={() => {
-                      setShowDropdown(false);
+                      setState(prev => ({ ...prev, showDropdown: false }));
                       handleSignOut();
                     }}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -157,9 +174,9 @@ const DailyTracker = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
+        {state.error && (
           <div className="mb-6 rounded-md bg-red-50 p-4">
-            <div className="text-sm text-red-700">{error}</div>
+            <div className="text-sm text-red-700">{state.error}</div>
           </div>
         )}
 
@@ -180,8 +197,11 @@ const DailyTracker = () => {
                   <input
                     type="date"
                     id="start-date"
-                    value={dateRange.start}
-                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                    value={state.dateRange.start}
+                    onChange={(e) => setState(prev => ({ 
+                      ...prev, 
+                      dateRange: { ...prev.dateRange, start: e.target.value } 
+                    }))}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
@@ -192,14 +212,17 @@ const DailyTracker = () => {
                   <input
                     type="date"
                     id="end-date"
-                    value={dateRange.end}
-                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                    value={state.dateRange.end}
+                    onChange={(e) => setState(prev => ({ 
+                      ...prev, 
+                      dateRange: { ...prev.dateRange, end: e.target.value } 
+                    }))}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
               </div>
             </div>
-            {loading ? (
+            {state.loading ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
@@ -214,7 +237,7 @@ const DailyTracker = () => {
         </div>
       </main>
 
-      {showDeleteConfirm && (
+      {state.showDeleteConfirm && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Account</h3>
@@ -223,7 +246,7 @@ const DailyTracker = () => {
             </p>
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={() => setState(prev => ({ ...prev, showDeleteConfirm: false }))}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Cancel
