@@ -159,7 +159,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
       )}
 
       {validEntries.map((entry) => (
-        <div key={entry.id} className="bg-white shadow rounded-lg p-6">
+        <div key={entry.id} className="bg-white shadow rounded-lg p-4 sm:p-6">
           {editForm.id === entry.id ? (
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
@@ -228,7 +228,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                 />
               </div>
 
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <button
                   type="submit"
                   disabled={uiState.loading}
@@ -247,9 +247,9 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
             </form>
           ) : (
             <>
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-gray-900 break-words">
                     {entry.jira_number} - {entry.jira_title}
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">
@@ -260,10 +260,10 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                     })}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
                   <button
                     onClick={() => handleEdit(entry)}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <svg
                       className="w-4 h-4 mr-1.5"
@@ -283,7 +283,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                   <button
                     onClick={() => handleDelete(entry.id)}
                     disabled={uiState.loading}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg
                       className="w-4 h-4 mr-1.5"
@@ -302,7 +302,7 @@ const JiraEntryList = ({ entries, onEntryDeleted, onEntryUpdated }) => {
                   </button>
                 </div>
               </div>
-              <p className="mt-2 text-sm text-gray-600">{entry.log_message}</p>
+              <p className="mt-2 text-sm text-gray-600 break-words">{entry.log_message}</p>
               <div className="mt-2">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   entry.jira_status === 'Done' ? 'bg-green-100 text-green-800' :

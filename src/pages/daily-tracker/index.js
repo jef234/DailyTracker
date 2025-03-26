@@ -16,6 +16,7 @@ const DailyTracker = () => {
     error: '',
     showDropdown: false,
     showDeleteConfirm: false,
+    showMobileMenu: false,
     dateRange: {
       start: new Date().toISOString().split('T')[0],
       end: new Date().toISOString().split('T')[0]
@@ -109,6 +110,23 @@ const DailyTracker = () => {
     });
   }, [state.entries, state.dateRange]);
 
+  // Add mobile menu toggle handler
+  const toggleMobileMenu = useCallback(() => {
+    setState(prev => ({ ...prev, showMobileMenu: !prev.showMobileMenu }));
+  }, []);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (state.showMobileMenu && !event.target.closest('.mobile-menu')) {
+        setState(prev => ({ ...prev, showMobileMenu: false }));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [state.showMobileMenu]);
+
   if (!user) return null;
 
   return (
@@ -116,8 +134,29 @@ const DailyTracker = () => {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-gray-900">Daily JIRA Tracker</h1>
-            <div className="relative">
+            <div className="flex items-center">
+              <button
+                onClick={toggleMobileMenu}
+                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              >
+                <span className="sr-only">Open menu</span>
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <h1 className="ml-2 text-xl font-bold text-gray-900">Daily JIRA Tracker</h1>
+            </div>
+            <div className="hidden lg:block relative">
               <button
                 onClick={() => setState(prev => ({ ...prev, showDropdown: !prev.showDropdown }))}
                 className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
@@ -171,6 +210,52 @@ const DailyTracker = () => {
             </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        <div className={`lg:hidden ${state.showMobileMenu ? 'block' : 'hidden'}`}>
+          <div className="px-2 pt-2 pb-3 space-y-1 mobile-menu">
+            <div className="px-3 py-2 text-sm text-gray-500">
+              {user.email}
+            </div>
+            <a
+              href="/reset-password"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              onClick={() => setState(prev => ({ ...prev, showMobileMenu: false }))}
+            >
+              Change Password
+            </a>
+            <button
+              onClick={() => {
+                setState(prev => ({ ...prev, showMobileMenu: false }));
+                handleSwitchAccount();
+              }}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Switch Account
+            </button>
+            <button
+              onClick={() => {
+                setState(prev => ({ 
+                  ...prev, 
+                  showMobileMenu: false,
+                  showDeleteConfirm: true 
+                }));
+              }}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:text-red-700 hover:bg-gray-50"
+            >
+              Delete Account
+            </button>
+            <button
+              onClick={() => {
+                setState(prev => ({ ...prev, showMobileMenu: false }));
+                handleSignOut();
+              }}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -181,17 +266,17 @@ const DailyTracker = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Log Jira</h2>
             <JiraEntryForm onEntryAdded={handleEntryAdded} />
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex justify-between items-center mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
               <h2 className="text-xl font-semibold text-gray-900">Jira Logs</h2>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <label htmlFor="start-date" className="text-sm font-medium text-gray-700">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
+                  <label htmlFor="start-date" className="text-sm font-medium text-gray-700 whitespace-nowrap">
                     From:
                   </label>
                   <input
@@ -202,11 +287,11 @@ const DailyTracker = () => {
                       ...prev, 
                       dateRange: { ...prev.dateRange, start: e.target.value } 
                     }))}
-                    className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    className="flex-1 sm:flex-none rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <label htmlFor="end-date" className="text-sm font-medium text-gray-700">
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
+                  <label htmlFor="end-date" className="text-sm font-medium text-gray-700 whitespace-nowrap">
                     To:
                   </label>
                   <input
@@ -217,7 +302,7 @@ const DailyTracker = () => {
                       ...prev, 
                       dateRange: { ...prev.dateRange, end: e.target.value } 
                     }))}
-                    className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    className="flex-1 sm:flex-none rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
               </div>
@@ -238,8 +323,8 @@ const DailyTracker = () => {
       </main>
 
       {state.showDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Account</h3>
             <p className="text-sm text-gray-500 mb-4">
               Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.

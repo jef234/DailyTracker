@@ -165,12 +165,12 @@ const JiraEntryForm = ({ onEntryAdded }) => {
               required
             />
             {uiState.showNumberSuggestions && filteredNumberSuggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300">
+              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-y-auto">
                 {filteredNumberSuggestions.map((suggestion) => (
                   <button
                     key={suggestion.jira_number}
                     type="button"
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
                     onClick={() => handleSuggestionSelect(suggestion)}
                   >
                     {suggestion.jira_number} - {suggestion.jira_title}
@@ -200,12 +200,12 @@ const JiraEntryForm = ({ onEntryAdded }) => {
               required
             />
             {uiState.showTitleSuggestions && filteredTitleSuggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300">
+              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-y-auto">
                 {filteredTitleSuggestions.map((suggestion) => (
                   <button
                     key={suggestion.jira_number}
                     type="button"
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
                     onClick={() => handleSuggestionSelect(suggestion)}
                   >
                     {suggestion.jira_number} - {suggestion.jira_title}
