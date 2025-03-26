@@ -4,6 +4,5 @@
   "/_document": "pages/_document.js",
   "/login": "pages/login.js",
   "/forgot-password": "pages/forgot-password.js",
-  "/": "pages/index.js",
-  "/daily-tracker": "pages/daily-tracker.js"
+  "/": "pages/index.js"
 }
