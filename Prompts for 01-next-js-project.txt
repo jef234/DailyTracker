@@ -1,0 +1,291 @@
+run 
+
+> corepack enable 
+
+in windows terminal with Admin rights
+
+--------------------------------------------------------
+Install NodeJS
+
+https://nodejs.org/en
+
+node --version
+
+--------------------------------------------------------
+create github repo and add/commit files to github
+
+# Navigate to your project directory
+cd 01-next-js-project
+
+# Initialize a new Git repository
+git init
+
+# Add your files to the staging area
+git add .
+
+# Commit the files
+git commit -m "Initial commit"
+
+Getting the "refusing to merge unrelated histories" error when trying to pull from your GitHub repository. This happens when Git detects that your local repository and the remote repository have different commit histories with no common ancestor.
+git pull origin main --allow-unrelated-histories
+
+======================================
+# Add the remote GitHub repository
+git remote add origin https://github.com/syedasad78/01-next-js-project.git
+
+# Push your code to GitHub
+git push -u origin main
+
+rename your branch to main if it is called master in the local repo
+git branch -M main
+git push -u origin main
+
+--------------------------------------------------------
+Store git credentials permanently
+
+git config --global credential.helper store
+
+Remove the existing remote:
+git remote remove origin
+
+Add it back with your username embedded in the URL:
+git remote add origin https://syedasad78@github.com/syedasad78/01-next-js-project.git
+
+Then try pushing again:
+git push -u origin main
+
+
+--------------------------------------------------------
+creating an app called "websum" short for website-summarizer
+
+npx create-next-app@latest
+
+App Name	: websum
+ESLint		: Yes
+TypeScript	: No
+
+
+--------------------------------------------------------
+# Add new files to the staging area
+git add .
+
+# Commit the files
+git commit -m "next app skeleton commit"
+
+# Push to remote github repo
+git push -u origin main
+
+--------------------------------------------------------
+
+cd websum
+npm run dev
+
+
+--------------------------------------------------------
+Get the Manage API button and dashboard page
+
+I want you to create a button that will redirect the user to /dashboards. This dashboard will be used to manage the API keys. The dashboard will have a user interface for performing CRUD operations on the API keys. 
+
+Please create .js files to implement this feature. 
+
+
+--------------------------------------------------------
+Use Screenshot 01 to have cursor create a similar dashboard page
+
+Can you change the dashboard page to have a similar design as the image I have pasted. 
+
+--------------------------------------------------------
+manage api keys" button no longer takes me to the dashboard page issue
+
+Clicking on the "manage api keys" button no longer takes me to the dashboard page. 
+
+--------------------------------------------------------
+Screenshot 03
+
+When create new API key "+" button is pressed, create a modal dialog like this to capture new name and key value details and save the same. 
+
+--------------------------------------------------------
+After adding the API keys, they are not getting saved. 
+
+--------------------------------------------------------
+When the eye icon is clicked, it should act as a toggle to show/hide API Key values
+
+
+
+--------------------------------------------------------
+Can you fix the copy button and edit button in the options so that they work as intended.
+
+--------------------------------------------------------
+Change the key value pattern logic in page.js
+
+--------------------------------------------------------
+Supabase Integration
+
+in websum folder, create file .env.local to hold supabase DB info
+
+
+--------------------------------------------------------
+I would like to connect this CRUD API Keys page to a real database hosted on supabase. 
+
+--------------------------------------------------------
+Module not found: Can't resolve '@supabase/supabase-js'
+
+solve through cursor as this is a issue (Module not found) with some library not being installed
+
+--------------------------------------------------------
+install supabase client library in the correct project folder
+
+cd websum && npm install @supabase/supabase-js
+
+or 
+
+cd websum 
+npm install @supabase/supabase-js
+
+--------------------------------------------------------
+from browser developer tools - network, payload and preview
+
+
+{code: "42501", details: null, hint: null,…}
+code
+: 
+"42501"
+details
+: 
+null
+hint
+: 
+null
+message
+: 
+"new row violates row-level security policy for table \"api_keys\""
+
+
+--------------------------------------------------------
+disable RLS  in supabase. not recommended to do this in production. 
+
+
+--------------------------------------------------------
+Screenshot 04
+I want a popup like in the image whenever I copy an API Key.
+
+
+--------------------------------------------------------
+Screenshot 04
+I want a popup like in the image whenever I delete an API Key but popup color should be red. 
+
+
+--------------------------------------------------------
+the gradient on this page is light. can you make it darker. 
+
+go back to checkpoint
+
+--------------------------------------------------------
+Please update the gradient in the dashboard header section to transition from red to blue
+
+
+--------------------------------------------------------
+Screenshot 05
+
+Please create a sidebar to be shown in the dashboard page. It should look like the attached screenshot. 
+
+
+--------------------------------------------------------
+from the sidebar, please remove options Personal, Research Reports, Research Assistant
+
+--------------------------------------------------------
+Replace the word "tavily" with "Website Summarizer"
+
+--------------------------------------------------------
+Make the sidebar hideable.
+
+--------------------------------------------------------
+** Refactoring the entire codebase to make it more efficient ** 
+
+I want you to help me refactor my code. 
+
+The file @page.js is big. It has a lot of logic in it. It has the Dashboard component and also the CRUD API for interacting with supabase.  I would like to split this logic to ensure the code is more maintainable. 
+
+which software - cursor/ vs code / windsurf
+which model - cohere
+where is it hosted - oci
+
+
+--------------------------------------------------------
+Sanity check to see if all functionality is working as expected. 
+
+when you add a new api key, it does not update the supabase database?
+
+--------------------------------------------------------
+Restricted access to API Keys
+
+When you click on "API Playground" in @sidebar.js, it should navigate the user to a new page /playground, which would contain a form to submit an API Key. 
+
+When the /playground page form is submitted, it will goto a page /protected where we will validate if this is indeed a valid API Key. It it is a valid API Key, we will notify with green popup saying "Valid API Key, /Protected Page can be accessed". And if the API Key is not valid, we will show a red popup saying "Invalid API Key, /Protected Page cannot be accessed"
+
+Write everthing in .js
+
+
+--------------------------------------------------------
+the code is showing the following error when an invalid API Key is entered.  It should gracefully handle this error and display a red popup saying "Invalid API Key, /Protected Page cannot be accessed"
+
+./src/app/protected/page.js (1:10)
+
+Ecmascript file had an error
+> 1 | import { useEffect, useState } from 'react';
+    |          ^^^^^^^^^
+  2 | import { useRouter, useSearchParams } from 'next/navigation';
+  3 | import { validateApiKey } from '@/services/validateApiKey';
+  4 | import { toast } from 'react-hot-toast';
+
+You're importing a component that needs `useEffect`. This React hook only works in a client component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+--------------------------------------------------------
+
+cursor ai ide
+nextjs
+tailwind css
+supabase as backend
+github for version control
+vercel for ci/cd
+
+
+--------------------------------------------------------
+
+
+
+--------------------------------------------------------
+
+machine learning, deep learning - maths like calculus, statistics, probability, algebra
+
+you can do devops in ai also called as MLOps. for MLops u don't need math skills
+
+GenAI does not require any maths skills.  any developer can easily pick up the skills. 
+
+
+
+
+Agentic AI Seminar Link: https://eeho.fa.us2.oraclecloud.com/fscmUI/redwood/learner/learn/offering-details?launchedFrom=wtl&learningItemId=302951078302154&tab=explore
+
+--------------------------------------------------------
+
+PydanticAI 
+
+--------------------------------------------------------
+
+
+
+
+--------------------------------------------------------
+
+
+--------------------------------------------------------
+
+
+
+--------------------------------------------------------
+
+
+
+--------------------------------------------------------
+
