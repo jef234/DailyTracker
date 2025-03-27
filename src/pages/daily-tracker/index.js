@@ -9,6 +9,14 @@ const DailyTracker = () => {
   const { user, signOut, deleteAccount } = useAuth();
   const router = useRouter();
   
+  // Get today and same day last month
+  const today = new Date();
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+  
+  // Format dates to YYYY-MM-DD
+  const formattedToday = today.toISOString().split('T')[0];
+  const formattedLastMonth = lastMonth.toISOString().split('T')[0];
+
   // Combine related state
   const [state, setState] = useState({
     entries: [],
@@ -18,8 +26,8 @@ const DailyTracker = () => {
     showDeleteConfirm: false,
     showMobileMenu: false,
     dateRange: {
-      start: new Date().toISOString().split('T')[0],
-      end: new Date().toISOString().split('T')[0]
+      start: formattedLastMonth,  // Set default start date to same day last month
+      end: formattedToday  // Set default end date to today
     }
   });
 
@@ -110,21 +118,38 @@ const DailyTracker = () => {
     });
   }, [state.entries, state.dateRange]);
 
-  // Add mobile menu toggle handler
+  // Update mobile menu toggle handler
   const toggleMobileMenu = useCallback(() => {
-    setState(prev => ({ ...prev, showMobileMenu: !prev.showMobileMenu }));
+    setState(prev => ({ 
+      ...prev, 
+      showMobileMenu: !prev.showMobileMenu,
+      showDropdown: false // Close desktop dropdown when mobile menu is toggled
+    }));
   }, []);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (state.showMobileMenu && !event.target.closest('.mobile-menu')) {
+      const mobileMenu = document.querySelector('.mobile-menu');
+      const menuButton = event.target.closest('button[aria-label="Open menu"]');
+      
+      if (state.showMobileMenu && 
+          mobileMenu && 
+          !mobileMenu.contains(event.target) && 
+          !menuButton) {
         setState(prev => ({ ...prev, showMobileMenu: false }));
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (state.showMobileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [state.showMobileMenu]);
 
   if (!user) return null;
@@ -137,6 +162,7 @@ const DailyTracker = () => {
             <div className="flex items-center">
               <button
                 onClick={toggleMobileMenu}
+                aria-label="Open menu"
                 className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
               >
                 <span className="sr-only">Open menu</span>
@@ -212,7 +238,10 @@ const DailyTracker = () => {
         </div>
 
         {/* Mobile menu */}
-        <div className={`lg:hidden ${state.showMobileMenu ? 'block' : 'hidden'}`}>
+        <div 
+          className={`lg:hidden ${state.showMobileMenu ? 'block' : 'hidden'}`}
+          onClick={(e) => e.stopPropagation()} // Prevent click from bubbling up
+        >
           <div className="px-2 pt-2 pb-3 space-y-1 mobile-menu">
             <div className="px-3 py-2 text-sm text-gray-500">
               {user.email}

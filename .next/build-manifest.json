@@ -32,10 +32,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/daily-tracker.js"
     ],
-    "/reset-password": [
+    "/login": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/reset-password.js"
+      "static/chunks/pages/login.js"
     ]
   },
   "ampFirstPages": []
